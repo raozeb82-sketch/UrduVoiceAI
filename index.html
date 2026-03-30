@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UrduVoice | ShahZeb Iqbal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #001f3f; /* Deep Midnight Blue */
+            color: white;
+            font-family: 'Noto Sans Arabic', sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #D4AF37; /* Gold */
+            width: 100%;
+        }
+        h1 { color: #D4AF37; margin: 0; font-size: 2rem; }
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin-top: 30px;
+        }
+        .toolbar {
+            background: #002d5a;
+            padding: 10px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            gap: 10px;
+            border: 1px solid #D4AF37;
+        }
+        button {
+            background: #D4AF37;
+            color: #001f3f;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #f1c40f; }
+        #editor {
+            background: white;
+            color: #333;
+            min-height: 300px;
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
+            font-size: 1.2rem;
+            line-height: 1.8;
+            outline: none;
+            border: 1px solid #D4AF37;
+            text-align: right;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .mic-btn {
+            background: #e74c3c;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+        }
+        .mic-btn.recording { background: #27ae60; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>UrduVoice</h1>
+    <p>By ShahZeb Iqbal</p>
+</header>
+
+<div class="container">
+    <div class="toolbar">
+        <button onclick="format('bold')">B</button>
+        <button onclick="format('italic')">I</button>
+        <button onclick="changeSize()">Size +</button>
+    </div>
+    <div id="editor" contenteditable="true" placeholder="بولنا شروع کریں..."></div>
+
+    <div class="controls">
+        <button class="mic-btn" id="start-btn">مائیک شروع کریں</button>
+        <button onclick="copyText()">Copy Text</button>
+        <button onclick="exportDoc('pdf')">Export PDF</button>
+        <button onclick="exportDoc('word')">Export Word</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+    const startBtn = document.getElementById('start-btn');
+    const editor = document.getElementById('editor');
+    let recognition;
+
+    if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
+        recognition.lang = 'ur-PK';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onresult = (event) => {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                transcript += event.results[i][0].transcript;
+            }
+            // Real-time "Smart Fix" for common Urdu pronunciation errors
+            transcript = transcript.replace("اللہ", "اللہ تعالی"); 
+            editor.innerText = transcript;
+        };
+    }
+
+    startBtn.onclick = () => {
+        if (startBtn.classList.contains('recording')) {
+            recognition.stop();
+            startBtn.classList.remove('recording');
+            startBtn.innerText = "مائیک شروع کریں";
+        } else {
+            recognition.start();
+            startBtn.classList.add('recording');
+            startBtn.innerText = "ریکارڈنگ ہو رہی ہے...";
+        }
+    };
+
+    function format(cmd) { document.execCommand(cmd, false, null); }
+    
+    function changeSize() {
+        const size = prompt("Enter font size (e.g., 20px):", "24px");
+        if (size) editor.style.fontSize = size;
+    }
+
+    function copyText() {
+        navigator.clipboard.writeText(editor.innerText);
+        alert("Text Copied!");
+    }
+
+    function exportDoc(type) {
+        const content = editor.innerText;
+        if (type === 'word') {
+            const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'UrduVoice_Export.doc';
+            link.click();
+        } else {
+            alert("PDF generating... (Requires library setup)");
+        }
+    }
+</script>
+
+</body>
+</html>
